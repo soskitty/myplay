@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         seekBar = findViewById(R.id.seek_bar)
         btnPlay = findViewById(R.id.btn_play)
 
-        adapter = AlbumAdapter(emptyList(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum)
+        adapter = AlbumAdapter(mutableListOf(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum)
         albumList.layoutManager = LinearLayoutManager(this)
         albumList.adapter = adapter
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
