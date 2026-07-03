@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -63,6 +64,14 @@ class MainActivity : AppCompatActivity() {
         adapter = AlbumAdapter(emptyList(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum)
         albumList.layoutManager = LinearLayoutManager(this)
         albumList.adapter = adapter
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            override fun onMove(rv: RecyclerView, from: RecyclerView.ViewHolder, to: RecyclerView.ViewHolder): Boolean {
+                adapter.moveItem(from.adapterPosition, to.adapterPosition)
+                storage.updateOrder(adapter.getAlbums())
+                return true
+            }
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {}
+        }).attachToRecyclerView(albumList)
 
         findViewById<View>(R.id.btn_add_album).setOnClickListener { openDirectoryPicker() }
         findViewById<View>(R.id.btn_prev).setOnClickListener { playOffset(-1) }

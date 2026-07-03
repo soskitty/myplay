@@ -25,18 +25,23 @@ class AlbumStorage(context: Context) {
                     treeUri = obj.getString("treeUri"),
                     trackIndex = obj.optInt("trackIndex", 0),
                     positionMs = obj.optInt("positionMs", 0),
-                    updatedAt = obj.optLong("updatedAt", 0L)
+                    updatedAt = obj.optLong("updatedAt", 0L),
+                    orderIndex = obj.optInt("orderIndex", 0)
                 )
             )
         }
-        return albums.sortedByDescending { it.id }
+        return albums.sortedBy { it.orderIndex }
     }
 
     fun upsert(album: Album) {
         val albums = getAll().toMutableList()
         val index = albums.indexOfFirst { it.id == album.id || it.treeUri == album.treeUri }
-        val saved = album.copy(updatedAt = System.currentTimeMillis())
-        if (index >= 0) albums[index] = saved else albums.add(saved)
+        if (index >= 0) {
+            albums[index] = album.copy(orderIndex = albums[index].orderIndex)
+        } else {
+            albums.replaceAll { it.copy(orderIndex = it.orderIndex + 1) }
+            albums.add(0, album.copy(orderIndex = 0))
+        }
         saveAll(albums)
     }
 
@@ -61,6 +66,10 @@ class AlbumStorage(context: Context) {
     fun delete(id: Long) {
         saveAll(getAll().filterNot { it.id == id })
         File(tracksDir, "tracks_$id.json").delete()
+    }
+
+    fun updateOrder(albums: List<Album>) {
+        saveAll(albums.mapIndexed { i, a -> a.copy(orderIndex = i) })
     }
 
     fun loadTrackCache(albumId: Long): List<Pair<String, String>>? {
@@ -98,6 +107,7 @@ class AlbumStorage(context: Context) {
                 put("trackIndex", album.trackIndex)
                 put("positionMs", album.positionMs)
                 put("updatedAt", album.updatedAt)
+                put("orderIndex", album.orderIndex)
             })
         }
         file.writeText(arr.toString())

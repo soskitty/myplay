@@ -18,6 +18,14 @@ class AlbumAdapter(
         notifyDataSetChanged()
     }
 
+    fun getAlbums(): List<Album> = albums
+
+    fun moveItem(from: Int, to: Int) {
+        val moved = albums.removeAt(from)
+        albums.add(to, moved)
+        notifyItemMoved(from, to)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
         return ViewHolder(view)

@@ -6,7 +6,8 @@ data class Album(
     val treeUri: String,
     val trackIndex: Int = 0,
     val positionMs: Int = 0,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val orderIndex: Int = 0
 )
 
 data class Track(
