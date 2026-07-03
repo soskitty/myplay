@@ -29,7 +29,7 @@ class AlbumStorage(context: Context) {
                 )
             )
         }
-        return albums.sortedByDescending { it.updatedAt }
+        return albums.sortedByDescending { it.id }
     }
 
     fun upsert(album: Album) {
@@ -50,7 +50,7 @@ class AlbumStorage(context: Context) {
     fun updateProgress(id: Long, trackIndex: Int, positionMs: Int) {
         val albums = getAll().map { album ->
             if (album.id == id) {
-                album.copy(trackIndex = trackIndex.coerceAtLeast(0), positionMs = positionMs.coerceAtLeast(0), updatedAt = System.currentTimeMillis())
+                album.copy(trackIndex = trackIndex.coerceAtLeast(0), positionMs = positionMs.coerceAtLeast(0))
             } else {
                 album
             }
