@@ -2,6 +2,7 @@ package com.example.myplay
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -170,8 +171,28 @@ class MainActivity : AppCompatActivity() {
         val track = tracks[currentTrackIndex]
         val mediaPlayer = MediaPlayer()
         player = mediaPlayer
+        mediaPlayer.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+        )
+        mediaPlayer.setOnErrorListener { _, what, extra ->
+            runOnUiThread {
+                btnPlay.text = "播放"
+                Toast.makeText(this, "无法播放此文件: $what/$extra", Toast.LENGTH_LONG).show()
+                updateNowPlaying()
+            }
+            true
+        }
         try {
-            mediaPlayer.setDataSource(this, track.uri)
+            contentResolver.openFileDescriptor(track.uri, "r")?.use { fd ->
+                mediaPlayer.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+            } ?: run {
+                Toast.makeText(this, "无法读取文件", Toast.LENGTH_SHORT).show()
+                updateNowPlaying()
+                return
+            }
             mediaPlayer.setOnPreparedListener {
                 seekBar.max = it.duration.coerceAtLeast(0)
                 val target = positionMs.coerceIn(0, seekBar.max)
