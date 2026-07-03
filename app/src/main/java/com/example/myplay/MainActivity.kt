@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private var currentTrackIndex = 0
     private var player: MediaPlayer? = null
     private var userSeeking = false
+    private val trackCache = mutableMapOf<String, List<Track>>()
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -63,9 +64,10 @@ class MainActivity : AppCompatActivity() {
         albumList.layoutManager = LinearLayoutManager(this)
         albumList.adapter = adapter
 
-        findViewById<Button>(R.id.btn_add_album).setOnClickListener { openDirectoryPicker() }
-        findViewById<Button>(R.id.btn_prev).setOnClickListener { playOffset(-1) }
-        findViewById<Button>(R.id.btn_next).setOnClickListener { playOffset(1) }
+        findViewById<View>(R.id.btn_add_album).setOnClickListener { openDirectoryPicker() }
+        findViewById<View>(R.id.btn_prev).setOnClickListener { playOffset(-1) }
+        findViewById<View>(R.id.btn_next).setOnClickListener { playOffset(1) }
+        findViewById<View>(R.id.tv_track).setOnClickListener { showTrackList() }
         btnPlay.setOnClickListener { togglePlay() }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -132,7 +134,7 @@ class MainActivity : AppCompatActivity() {
     private fun selectAlbum(album: Album) {
         saveProgress()
         currentAlbum = album
-        tracks = loadTracks(album)
+        tracks = trackCache.getOrPut(album.treeUri) { loadTracks(album) }
         currentTrackIndex = album.trackIndex.coerceIn(0, (tracks.size - 1).coerceAtLeast(0))
         prepareCurrentTrack(album.positionMs, autoStart = false)
         adapter.notifyDataSetChanged()
@@ -276,11 +278,27 @@ class MainActivity : AppCompatActivity() {
                     currentAlbum = null
                     tracks = emptyList()
                 }
+                trackCache.remove(album.treeUri)
                 storage.delete(album.id)
                 loadAlbums()
                 updateNowPlaying()
             }
             .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showTrackList() {
+        if (tracks.isEmpty()) return
+        val names = tracks.mapIndexed { i, t -> "${i + 1}. ${t.name}" }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("${currentAlbum?.name}（${tracks.size}集）")
+            .setItems(names) { _, which ->
+                saveProgress()
+                currentTrackIndex = which
+                saveProgress(0)
+                prepareCurrentTrack(0, autoStart = true)
+            }
+            .setPositiveButton("取消", null)
             .show()
     }
 
