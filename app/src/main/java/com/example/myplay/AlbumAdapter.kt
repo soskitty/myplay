@@ -27,7 +27,9 @@ class AlbumAdapter(
         val album = albums[position]
         holder.name.text = album.name
         holder.detail.text = "第 ${album.trackIndex + 1} 集 · ${formatTime(album.positionMs)}"
-        holder.itemView.alpha = if (selectedAlbumId() == album.id) 1f else 0.82f
+        val isSelected = selectedAlbumId() == album.id
+        holder.itemView.alpha = if (isSelected) 1f else 0.82f
+        holder.itemView.setBackgroundResource(if (isSelected) R.drawable.panel_bg_selected else R.drawable.panel_bg)
         holder.itemView.setOnClickListener { onClick(album) }
         holder.itemView.setOnLongClickListener { onDelete(album); true }
     }
