@@ -3,7 +3,6 @@ package com.example.myplay
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -11,7 +10,6 @@ class AlbumAdapter(
     private var albums: List<Album>,
     private val selectedAlbumId: () -> Long?,
     private val onClick: (Album) -> Unit,
-    private val onRename: (Album) -> Unit,
     private val onDelete: (Album) -> Unit
 ) : RecyclerView.Adapter<AlbumAdapter.ViewHolder>() {
 
@@ -32,7 +30,6 @@ class AlbumAdapter(
         holder.itemView.alpha = if (selectedAlbumId() == album.id) 1f else 0.82f
         holder.itemView.setOnClickListener { onClick(album) }
         holder.itemView.setOnLongClickListener { onDelete(album); true }
-        holder.rename.setOnClickListener { onRename(album) }
     }
 
     override fun getItemCount(): Int = albums.size
@@ -40,6 +37,5 @@ class AlbumAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = view.findViewById(R.id.tv_name)
         val detail: TextView = view.findViewById(R.id.tv_detail)
-        val rename: Button = view.findViewById(R.id.btn_rename)
     }
 }

@@ -11,7 +11,6 @@ import android.os.Looper
 import android.provider.DocumentsContract
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -37,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private var tracks = emptyList<Track>()
     private var currentTrackIndex = 0
     private var player: MediaPlayer? = null
+    private var audioFd: android.os.ParcelFileDescriptor? = null
     private var userSeeking = false
     private val trackCache = mutableMapOf<String, List<Track>>()
 
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         seekBar = findViewById(R.id.seek_bar)
         btnPlay = findViewById(R.id.btn_play)
 
-        adapter = AlbumAdapter(emptyList(), { currentAlbum?.id }, ::selectAlbum, ::renameAlbum, ::confirmDeleteAlbum)
+        adapter = AlbumAdapter(emptyList(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum)
         albumList.layoutManager = LinearLayoutManager(this)
         albumList.adapter = adapter
 
@@ -99,8 +99,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        player?.release()
-        player = null
+        releasePlayer()
     }
 
     private fun openDirectoryPicker() {
@@ -158,8 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun prepareCurrentTrack(positionMs: Int, autoStart: Boolean) {
-        player?.release()
-        player = null
+        releasePlayer()
         if (tracks.isEmpty()) {
             tvAlbum.text = currentAlbum?.name ?: "还没有选择专辑"
             tvTrack.text = "这个文件夹里没有找到常见音频文件"
@@ -189,13 +187,13 @@ class MainActivity : AppCompatActivity() {
             true
         }
         try {
-            contentResolver.openFileDescriptor(track.uri, "r")?.use { fd ->
-                mediaPlayer.setDataSource(fd.fileDescriptor)
-            } ?: run {
+            audioFd = contentResolver.openFileDescriptor(track.uri, "r")
+            if (audioFd == null) {
                 Toast.makeText(this, "无法读取文件", Toast.LENGTH_SHORT).show()
                 updateNowPlaying()
                 return
             }
+            mediaPlayer.setDataSource(audioFd!!.fileDescriptor)
             mediaPlayer.setOnPreparedListener {
                 seekBar.max = it.duration.coerceAtLeast(0)
                 val target = positionMs.coerceIn(0, seekBar.max)
@@ -213,6 +211,13 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_LONG).show()
             updateNowPlaying()
         }
+    }
+
+    private fun releasePlayer() {
+        audioFd?.close()
+        audioFd = null
+        player?.release()
+        player = null
     }
 
     private fun togglePlay() {
@@ -247,35 +252,13 @@ class MainActivity : AppCompatActivity() {
         loadAlbums()
     }
 
-    private fun renameAlbum(album: Album) {
-        val input = EditText(this).apply {
-            setText(album.name)
-            selectAll()
-        }
-        AlertDialog.Builder(this)
-            .setTitle("重命名专辑")
-            .setView(input)
-            .setPositiveButton("保存") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    storage.rename(album.id, name)
-                    loadAlbums()
-                    if (currentAlbum?.id == album.id) currentAlbum = currentAlbum?.copy(name = name)
-                    updateNowPlaying()
-                }
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
-
     private fun confirmDeleteAlbum(album: Album) {
         AlertDialog.Builder(this)
             .setTitle("移除专辑")
             .setMessage("只从 MyPlay 列表移除，不删除手机里的音频文件。")
             .setPositiveButton("移除") { _, _ ->
                 if (currentAlbum?.id == album.id) {
-                    player?.release()
-                    player = null
+                    releasePlayer()
                     currentAlbum = null
                     tracks = emptyList()
                 }
