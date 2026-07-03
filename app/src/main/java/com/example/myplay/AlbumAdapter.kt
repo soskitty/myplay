@@ -7,18 +7,19 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class AlbumAdapter(
-    private var albums: List<Album>,
+    private val albums: MutableList<Album>,
     private val selectedAlbumId: () -> Long?,
     private val onClick: (Album) -> Unit,
     private val onDelete: (Album) -> Unit
 ) : RecyclerView.Adapter<AlbumAdapter.ViewHolder>() {
 
     fun submitList(newAlbums: List<Album>) {
-        albums = newAlbums
+        albums.clear()
+        albums.addAll(newAlbums)
         notifyDataSetChanged()
     }
 
-    fun getAlbums(): List<Album> = albums
+    fun getAlbums(): MutableList<Album> = albums
 
     fun moveItem(from: Int, to: Int) {
         val moved = albums.removeAt(from)
