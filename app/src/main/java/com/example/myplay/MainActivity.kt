@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
         }
         try {
             contentResolver.openFileDescriptor(track.uri, "r")?.use { fd ->
-                mediaPlayer.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+                mediaPlayer.setDataSource(fd.fileDescriptor)
             } ?: run {
                 Toast.makeText(this, "无法读取文件", Toast.LENGTH_SHORT).show()
                 updateNowPlaying()
