@@ -1,39 +1,47 @@
 # MyPlay
 
-给小朋友播放本地有声读物的 Android 应用，目标设备包含 MIUI 14。
+> Local audiobook player for kids. Lightweight, no ID3 tags, natural filename sorting.  
+> 给小朋友听有声读物的 Android 播放器。轻量、不读 ID3、文件名自然排序。
 
-## 功能
+---
 
-- 添加专辑：通过系统文件夹选择器选择手机上的音频目录。
-- 专辑命名：默认使用文件夹名称，可在列表中点“改名”重命名。
-- 播放进度：每个专辑分别保存当前集数和音频中间暂停位置。
-- 文件排序：只按文件名排序，不读取 ID3 标签。
-- 自然排序：支持 `第一集`、`第1集`、`第01集`、`第001集`、`1`、`01`、`001` 等常见命名。
-- 音频格式：支持系统播放器可播放的常见格式，包括 mp3、m4a、aac、wav、flac、ogg、opus。
+## Features / 功能
 
-## 使用
+- **Album management / 专辑管理** — pick any folder via system picker, auto-named by folder name, long-press to remove  
+  通过系统选择器添加文件夹作为专辑，自动以文件夹名命名，长按移除
+- **Per-album progress / 独立进度** — each album remembers which track and exact position (milliseconds)  
+  每个专辑分别记住当前集数和毫秒级暂停位置
+- **Natural sorting / 自然排序** — sorts by filename only (no ID3 tags), handles `第一集`, `第01集`, `1`, `001` etc.  
+  仅按文件名排序，不读 ID3；支持 `第一集`、`第01集`、`1`、`001` 等中式命名
+- **Track list / 选集** — tap current track to open list and jump to any episode  
+  点击当前曲目弹出列表，任选一集跳转
+- **Drag to reorder / 拖动排序** — long-press and drag albums to rearrange  
+  长按专辑拖动调整顺序
+- **Supported formats / 支持格式** — mp3, m4a, aac, wav, flac, ogg, opus
+- **Pause / play colors** — orange for play, light orange for pause, no shadow  
+  播放橙色、暂停浅橙、无阴影
 
-1. 点击“添加专辑（选择文件夹）”。
-2. 选择存放音频的一整个文件夹。
-3. 点击专辑开始加载，点击“播放”。
-4. 长按专辑可从 MyPlay 列表移除，不会删除手机里的音频文件。
+## Screenshots / 截图
 
-## 构建
+![icon](icon.png)
 
-当前目录未包含 Gradle wrapper，且本机没有全局 `gradle` 命令。可用 Android Studio 打开 `MyPlay` 目录后构建，或在安装 Gradle 后执行：
+## Download / 下载
 
-```powershell
-gradle assembleDebug
+[Download latest APK (v1.0)](https://github.com/soskitty/myplay/releases/latest) — or grab it from Actions artifacts.
+
+## Build / 构建
+
+```bash
+git clone https://github.com/soskitty/myplay.git
+cd myplay
+gradle wrapper --gradle-version=8.5
+./gradlew assembleDebug
 ```
 
-生成的 APK 通常位于：
+APK at `app/build/outputs/apk/debug/MyPlay.apk`.
 
-```text
-app/build/outputs/apk/debug/app-debug.apk
-```
+Or open with Android Studio and build.
 
-## GitHub 在线编译
+## License
 
-已包含 GitHub Actions 配置：`.github/workflows/android-build.yml`。
-
-推送到 GitHub 后，进入仓库的 `Actions` 页面，运行 `Android Build`，构建完成后在 workflow 的 `Artifacts` 下载 `MyPlay-debug-apk`。
+MIT
