@@ -167,6 +167,7 @@ class MainActivity : AppCompatActivity() {
             seekBar.progress = 0
             seekBar.max = 0
             btnPlay.text = "播放"
+            btnPlay.setBackgroundResource(R.drawable.button_primary)
             return
         }
 
@@ -315,7 +316,9 @@ class MainActivity : AppCompatActivity() {
             seekBar.progress = position.coerceIn(0, seekBar.max.coerceAtLeast(0))
         }
         tvTime.text = "${formatTime(position)} / ${formatTime(duration)}"
-        btnPlay.text = if (mediaPlayer?.isPlaying == true) "暂停" else "播放"
+        val playing = mediaPlayer?.isPlaying == true
+        btnPlay.text = if (playing) "暂停" else "播放"
+        btnPlay.setBackgroundResource(if (playing) R.drawable.button_pause else R.drawable.button_primary)
     }
 
     private fun tick() {
