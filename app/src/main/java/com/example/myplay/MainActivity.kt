@@ -140,13 +140,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadTracks(album: Album): List<Track> {
+        storage.loadTrackCache(album.id)?.let { cached ->
+            return cached.map { (name, uri) -> Track(name, Uri.parse(uri)) }
+        }
         val directory = DocumentFile.fromTreeUri(this, Uri.parse(album.treeUri)) ?: return emptyList()
-        return directory.listFiles()
+        val scanned = directory.listFiles()
             .asSequence()
             .filter { it.isFile && it.name != null && isAudio(it.name!!, it.type) }
             .map { Track(it.name!!, it.uri) }
             .sortedWith { a, b -> NaturalFileName.compare(a.name, b.name) }
             .toList()
+        if (scanned.isNotEmpty()) storage.saveTrackCache(album.id, scanned)
+        return scanned
     }
 
     private fun isAudio(name: String, mimeType: String?): Boolean {
