@@ -7,7 +7,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
+import android.media.MediaMetadata
 import android.media.MediaPlayer
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -23,11 +26,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.documentfile.provider.DocumentFile
-import androidx.media.app.NotificationCompat.MediaStyle
-import androidx.media.session.MediaButtonReceiver
-import androidx.media.session.MediaSessionCompat
-import androidx.media.session.PlaybackStateCompat
-import android.support.v4.media.MediaMetadataCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -54,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     private var timerStopMs: Long? = null
     private var episodeBudget: Int? = null
     private lateinit var tvTimerInfo: TextView
-    private var mediaSession: MediaSessionCompat? = null
+    private var mediaSession: MediaSession? = null
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -147,7 +145,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        when (intent.action) {
+            "com.example.myplay.PLAY_PAUSE" -> togglePlay()
+            "com.example.myplay.SKIP_NEXT" -> playOffset(1)
+            "com.example.myplay.SKIP_PREV" -> playOffset(-1)
+            "com.example.myplay.STOP" -> { player?.pause(); saveProgress(); releasePlayer(); updateNowPlaying() }
+        }
     }
 
     private val notificationManager by lazy { getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
@@ -168,9 +171,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun mediaActionIntent(action: String): PendingIntent =
+        PendingIntent.getActivity(this, action.hashCode(),
+            Intent(this, MainActivity::class.java).apply {
+                this.action = "com.example.myplay.$action"
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
     private fun initMediaSession() {
-        mediaSession = MediaSessionCompat(this, "MyPlay").apply {
-            setCallback(object : MediaSessionCompat.Callback() {
+        mediaSession = MediaSession(this, "MyPlay").apply {
+            setCallback(object : MediaSession.Callback() {
                 override fun onPlay() = runOnUiThread {
                     if (player == null) currentAlbum?.let { prepareCurrentTrack(it.positionMs, autoStart = true) }
                     else { player?.start(); updateNowPlaying(); tick() }
@@ -195,19 +206,19 @@ class MainActivity : AppCompatActivity() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val playing = player?.isPlaying == true
-        val state = if (playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        val playState = if (playing) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED
 
         session.setPlaybackState(
-            PlaybackStateCompat.Builder().setState(state, safePosition()?.toLong() ?: 0, 1f)
-                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                    or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_STOP)
+            PlaybackState.Builder().setState(playState, safePosition()?.toLong() ?: 0, 1f)
+                .setActions(PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT
+                    or PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_STOP)
                 .build()
         )
         session.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.name)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentAlbum?.name)
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (safeDuration() ?: 0).toLong())
+            MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, track.name)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, currentAlbum?.name)
+                .putLong(MediaMetadata.METADATA_KEY_DURATION, (safeDuration() ?: 0).toLong())
                 .build()
         )
 
@@ -216,17 +227,14 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
-                .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP)))
+            .setStyle(android.app.Notification.MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
+                .setCancelButtonIntent(mediaActionIntent("STOP")))
             .setOngoing(playing)
             .setShowWhen(false)
-            .addAction(android.R.drawable.ic_media_previous, "上一集",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS))
+            .addAction(android.R.drawable.ic_media_previous, "上一集", mediaActionIntent("SKIP_PREV"))
             .addAction(if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                if (playing) "暂停" else "播放",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE))
-            .addAction(android.R.drawable.ic_media_next, "下一集",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT))
+                if (playing) "暂停" else "播放", mediaActionIntent("PLAY_PAUSE"))
+            .addAction(android.R.drawable.ic_media_next, "下一集", mediaActionIntent("SKIP_NEXT"))
             .build()
         notificationManager.notify(NOTIFY_ID, notification)
     }
@@ -234,7 +242,7 @@ class MainActivity : AppCompatActivity() {
     private fun hideNotification() {
         notificationManager.cancel(NOTIFY_ID)
         mediaSession?.setPlaybackState(
-            PlaybackStateCompat.Builder().setState(PlaybackStateCompat.STATE_STOPPED, 0, 1f).build()
+            PlaybackState.Builder().setState(PlaybackState.STATE_STOPPED, 0, 1f).build()
         )
     }
 
@@ -460,7 +468,7 @@ class MainActivity : AppCompatActivity() {
         val parts = mutableListOf<String>()
         timerStopMs?.let { ms ->
             val sec = ((ms - System.currentTimeMillis()) / 1000).coerceAtLeast(0).toInt()
-            parts.add("5分钟倒计时 %02d:%02d".format(sec / 60, sec % 60))
+            parts.add("倒计时 %02d:%02d".format(sec / 60, sec % 60))
         }
         episodeBudget?.let { parts.add("剩余 ${it}集") }
         tvTimerInfo.text = if (parts.isEmpty()) "" else parts.joinToString(" · ")
