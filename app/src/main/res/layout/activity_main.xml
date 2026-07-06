@@ -50,7 +50,6 @@
             android:minWidth="0dp"
             android:paddingHorizontal="4dp"
             android:paddingVertical="8dp"
-            android:singleLine="true"
             android:stateListAnimator="@null"
             android:text="+5分钟"
             android:textColor="#6C431B"
@@ -67,7 +66,6 @@
             android:minWidth="0dp"
             android:paddingHorizontal="4dp"
             android:paddingVertical="8dp"
-            android:singleLine="true"
             android:stateListAnimator="@null"
             android:text="+1集"
             android:textColor="#6C431B"
@@ -87,6 +85,17 @@
             android:textColor="#6C431B"
             android:textSize="13sp" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_timer_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="end"
+        android:minHeight="14dp"
+        android:text=""
+        android:textColor="#8A6E4E"
+        android:textSize="11sp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/album_list"

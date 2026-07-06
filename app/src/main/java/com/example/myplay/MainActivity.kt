@@ -42,8 +42,7 @@ class MainActivity : AppCompatActivity() {
     private val trackCache = mutableMapOf<String, List<Track>>()
     private var timerStopMs: Long? = null
     private var episodeBudget: Int? = null
-    private lateinit var btnTimer5min: Button
-    private lateinit var btnTimerEp: Button
+    private lateinit var tvTimerInfo: TextView
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -83,13 +82,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tv_track).setOnClickListener { showTrackList() }
         btnPlay.setOnClickListener { togglePlay() }
 
-        btnTimer5min = findViewById(R.id.btn_timer_5min)
-        btnTimerEp = findViewById(R.id.btn_timer_ep)
-        btnTimer5min.setOnClickListener {
+        tvTimerInfo = findViewById(R.id.tv_timer_info)
+        findViewById<View>(R.id.btn_timer_5min).setOnClickListener {
             timerStopMs = (timerStopMs ?: System.currentTimeMillis()) + 5 * 60 * 1000
             updateTimerDisplay()
         }
-        btnTimerEp.setOnClickListener {
+        findViewById<View>(R.id.btn_timer_ep).setOnClickListener {
             episodeBudget = (episodeBudget ?: 0) + 1
             updateTimerDisplay()
         }
@@ -349,11 +347,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTimerDisplay() {
-        btnTimer5min.text = timerStopMs?.let { ms ->
+        val parts = mutableListOf<String>()
+        timerStopMs?.let { ms ->
             val sec = ((ms - System.currentTimeMillis()) / 1000).coerceAtLeast(0).toInt()
-            "+5分钟 · 剩余 %02d:%02d".format(sec / 60, sec % 60)
-        } ?: "+5分钟"
-        btnTimerEp.text = episodeBudget?.let { "+1集 · 剩余 ${it}集" } ?: "+1集"
+            parts.add("5分钟倒计时 %02d:%02d".format(sec / 60, sec % 60))
+        }
+        episodeBudget?.let { parts.add("剩余 ${it}集") }
+        tvTimerInfo.text = if (parts.isEmpty()) "" else parts.joinToString(" · ")
     }
 
     private fun stopPlayback() {
