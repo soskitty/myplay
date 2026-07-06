@@ -48,12 +48,13 @@
             android:elevation="0dp"
             android:gravity="center"
             android:minWidth="0dp"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="4dp"
             android:paddingVertical="8dp"
+            android:singleLine="true"
             android:stateListAnimator="@null"
             android:text="+5分钟"
             android:textColor="#6C431B"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <Button
             android:id="@+id/btn_timer_ep"
@@ -64,12 +65,13 @@
             android:elevation="0dp"
             android:gravity="center"
             android:minWidth="0dp"
-            android:paddingHorizontal="8dp"
+            android:paddingHorizontal="4dp"
             android:paddingVertical="8dp"
+            android:singleLine="true"
             android:stateListAnimator="@null"
             android:text="+1集"
             android:textColor="#6C431B"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <Button
             android:id="@+id/btn_timer_cancel"
