@@ -25,6 +25,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationCompat.MediaStyle
 import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -227,7 +228,7 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(androidx.core.app.NotificationCompat.MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
+            .setStyle(MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
                 .setCancelButtonIntent(mediaActionIntent("STOP")))
             .setOngoing(playing)
             .setShowWhen(false)
