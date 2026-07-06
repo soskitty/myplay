@@ -40,6 +40,10 @@ class MainActivity : AppCompatActivity() {
     private var audioFd: android.os.ParcelFileDescriptor? = null
     private var userSeeking = false
     private val trackCache = mutableMapOf<String, List<Track>>()
+    private var timerStopMs: Long? = null
+    private var episodeBudget: Int? = null
+    private lateinit var tvTimer5min: TextView
+    private lateinit var tvTimerEp: TextView
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -78,6 +82,22 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn_next).setOnClickListener { playOffset(1) }
         findViewById<View>(R.id.tv_track).setOnClickListener { showTrackList() }
         btnPlay.setOnClickListener { togglePlay() }
+
+        tvTimer5min = findViewById(R.id.tv_timer_5min)
+        tvTimerEp = findViewById(R.id.tv_timer_ep)
+        findViewById<View>(R.id.btn_timer_5min).setOnClickListener {
+            timerStopMs = (timerStopMs ?: System.currentTimeMillis()) + 5 * 60 * 1000
+            updateTimerDisplay()
+        }
+        findViewById<View>(R.id.btn_timer_ep).setOnClickListener {
+            episodeBudget = (episodeBudget ?: 0) + 1
+            updateTimerDisplay()
+        }
+        findViewById<View>(R.id.btn_timer_cancel).setOnClickListener {
+            timerStopMs = null
+            episodeBudget = null
+            updateTimerDisplay()
+        }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -218,7 +238,17 @@ class MainActivity : AppCompatActivity() {
             }
             mediaPlayer.setOnCompletionListener {
                 saveProgress(0)
-                if (currentTrackIndex < tracks.lastIndex) playOffset(1) else updateNowPlaying()
+                if (episodeBudget != null) {
+                    episodeBudget = episodeBudget!! - 1
+                    if (episodeBudget!! <= 0) {
+                        stopPlayback()
+                        return@setOnCompletionListener
+                    }
+                }
+                if (currentTrackIndex < tracks.lastIndex) playOffset(1) else {
+                    episodeBudget = null
+                    updateNowPlaying()
+                }
             }
             mediaPlayer.prepareAsync()
         } catch (e: Exception) {
@@ -318,11 +348,31 @@ class MainActivity : AppCompatActivity() {
         btnPlay.setBackgroundResource(if (playing) R.drawable.button_pause else R.drawable.button_primary)
     }
 
+    private fun updateTimerDisplay() {
+        tvTimer5min.text = timerStopMs?.let { ms ->
+            val sec = ((ms - System.currentTimeMillis()) / 1000).coerceAtLeast(0).toInt()
+            "剩余 %02d:%02d".format(sec / 60, sec % 60)
+        } ?: ""
+        tvTimerEp.text = episodeBudget?.let { "剩余 ${it}集" } ?: ""
+    }
+
+    private fun stopPlayback() {
+        timerStopMs = null
+        episodeBudget = null
+        player?.pause()
+        updateNowPlaying()
+        updateTimerDisplay()
+        Toast.makeText(this, "定时停止", Toast.LENGTH_SHORT).show()
+    }
+
     private fun tick() {
         handler.removeCallbacksAndMessages(null)
         handler.postDelayed(object : Runnable {
             override fun run() {
                 updateNowPlaying()
+                updateTimerDisplay()
+                val stop = timerStopMs?.let { System.currentTimeMillis() >= it } == true
+                if (stop) stopPlayback()
                 if (player?.isPlaying == true) handler.postDelayed(this, 1000)
             }
         }, 200)
