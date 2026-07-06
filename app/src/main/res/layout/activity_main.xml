@@ -48,12 +48,14 @@
 
             <Button
                 android:id="@+id/btn_timer_5min"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/button_secondary"
+                android:elevation="0dp"
                 android:minWidth="0dp"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="4dp"
+                android:stateListAnimator="@null"
                 android:text="+5分钟"
                 android:textColor="#6C431B"
                 android:textSize="13sp" />
@@ -76,12 +78,14 @@
 
             <Button
                 android:id="@+id/btn_timer_ep"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/button_secondary"
+                android:elevation="0dp"
                 android:minWidth="0dp"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="4dp"
+                android:stateListAnimator="@null"
                 android:text="+1集"
                 android:textColor="#6C431B"
                 android:textSize="13sp" />
@@ -100,9 +104,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/button_secondary"
+            android:elevation="0dp"
             android:minWidth="0dp"
             android:paddingHorizontal="10dp"
             android:paddingVertical="4dp"
+            android:stateListAnimator="@null"
             android:text="取消"
             android:textColor="#6C431B"
             android:textSize="13sp" />
