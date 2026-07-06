@@ -15,6 +15,25 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "myplay"
+            keyPassword = "android"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
