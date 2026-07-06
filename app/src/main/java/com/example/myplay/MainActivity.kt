@@ -1,7 +1,6 @@
 package com.example.myplay
 
 import android.app.AlertDialog
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -228,7 +227,7 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken))
+            .setStyle(NotificationCompat.MediaStyle().setMediaSession(session.sessionToken))
             .setOngoing(playing)
             .setShowWhen(false)
             .addAction(android.R.drawable.ic_media_previous, "上一集", mediaActionIntent("SKIP_PREV"))
