@@ -1,10 +1,15 @@
 package com.example.myplay
 
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,7 +21,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media.session.MediaButtonReceiver
+import androidx.media.session.MediaSessionCompat
+import androidx.media.session.PlaybackStateCompat
+import android.support.v4.media.MediaMetadataCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private var timerStopMs: Long? = null
     private var episodeBudget: Int? = null
     private lateinit var tvTimerInfo: TextView
+    private var mediaSession: MediaSessionCompat? = null
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -114,6 +126,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        createNotificationChannel()
+        initMediaSession()
+
         loadAlbums()
         albums.firstOrNull()?.let(::selectAlbum)
     }
@@ -126,7 +141,101 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+        mediaSession?.release()
         releasePlayer()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+    }
+
+    private val notificationManager by lazy { getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
+    private val CHANNEL_ID = "myplay_playback"
+    private val NOTIFY_ID = 1
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(
+                NotificationChannel(CHANNEL_ID, "播放控制", NotificationManager.IMPORTANCE_LOW).apply {
+                    description = "控制音频播放"
+                    setShowBadge(false)
+                }
+            )
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
+        }
+    }
+
+    private fun initMediaSession() {
+        mediaSession = MediaSessionCompat(this, "MyPlay").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() = runOnUiThread {
+                    if (player == null) currentAlbum?.let { prepareCurrentTrack(it.positionMs, autoStart = true) }
+                    else { player?.start(); updateNowPlaying(); tick() }
+                }
+                override fun onPause() = runOnUiThread { player?.pause(); updateNowPlaying() }
+                override fun onSkipToNext() = runOnUiThread { playOffset(1) }
+                override fun onSkipToPrevious() = runOnUiThread { playOffset(-1) }
+                override fun onStop() = runOnUiThread {
+                    player?.pause(); saveProgress(); releasePlayer(); updateNowPlaying()
+                }
+            })
+            isActive = true
+        }
+    }
+
+    private fun showNotification() {
+        val session = mediaSession ?: return
+        val track = tracks.getOrNull(currentTrackIndex) ?: return
+
+        val openApp = PendingIntent.getActivity(this, 0,
+            Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_SINGLE_TOP },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val playing = player?.isPlaying == true
+        val state = if (playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+
+        session.setPlaybackState(
+            PlaybackStateCompat.Builder().setState(state, safePosition()?.toLong() ?: 0, 1f)
+                .setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                    or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_STOP)
+                .build()
+        )
+        session.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.name)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentAlbum?.name)
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (safeDuration() ?: 0).toLong())
+                .build()
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setContentTitle(track.name)
+            .setContentText(currentAlbum?.name)
+            .setContentIntent(openApp)
+            .setStyle(MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
+                .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP)))
+            .setOngoing(playing)
+            .setShowWhen(false)
+            .addAction(android.R.drawable.ic_media_previous, "上一集",
+                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS))
+            .addAction(if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                if (playing) "暂停" else "播放",
+                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE))
+            .addAction(android.R.drawable.ic_media_next, "下一集",
+                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT))
+            .build()
+        notificationManager.notify(NOTIFY_ID, notification)
+    }
+
+    private fun hideNotification() {
+        notificationManager.cancel(NOTIFY_ID)
+        mediaSession?.setPlaybackState(
+            PlaybackStateCompat.Builder().setState(PlaybackStateCompat.STATE_STOPPED, 0, 1f).build()
+        )
     }
 
     private fun openDirectoryPicker() {
@@ -344,6 +453,7 @@ class MainActivity : AppCompatActivity() {
         val playing = mediaPlayer?.isPlaying == true
         btnPlay.text = if (playing) "暂停" else "播放"
         btnPlay.setBackgroundResource(if (playing) R.drawable.button_pause else R.drawable.button_primary)
+        if (tracks.isNotEmpty() && player != null) showNotification() else hideNotification()
     }
 
     private fun updateTimerDisplay() {
