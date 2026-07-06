@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.MediaMetadata
@@ -216,11 +217,13 @@ class MainActivity : AppCompatActivity() {
                     or PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_STOP)
                 .build()
         )
+        val cover = Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565).also { it.eraseColor(Color.parseColor("#D97924")) }
         session.setMetadata(
             MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_TITLE, track.name)
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, currentAlbum?.name)
                 .putLong(MediaMetadata.METADATA_KEY_DURATION, (safeDuration() ?: 0).toLong())
+                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, cover)
                 .build()
         )
 
