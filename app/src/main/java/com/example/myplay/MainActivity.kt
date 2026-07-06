@@ -223,11 +223,21 @@ class MainActivity : AppCompatActivity() {
                 .build()
         )
 
+        val timerPart = buildString {
+            timerStopMs?.let { ms ->
+                val sec = ((ms - System.currentTimeMillis()) / 1000).coerceAtLeast(0).toInt()
+                append("倒计时 %02d:%02d".format(sec / 60, sec % 60))
+            }
+            episodeBudget?.let { if (isNotEmpty()) append(" · "); append("剩余 ${it}集") }
+        }
+        val contentText = if (timerPart.isEmpty()) currentAlbum?.name ?: "" else timerPart
+
         val notification = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
             .setContentTitle(track.name)
-            .setContentText(currentAlbum?.name)
+            .setContentText(contentText)
             .setContentIntent(openApp)
+            .setColor(0xFFD97924.toInt())
             .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken))
             .setOngoing(playing)
             .setShowWhen(false)
