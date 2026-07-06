@@ -1,6 +1,7 @@
 package com.example.myplay
 
 import android.app.AlertDialog
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -222,12 +223,12 @@ class MainActivity : AppCompatActivity() {
                 .build()
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_media_play)
+        val notification = Notification.Builder(this, CHANNEL_ID)
+            .setSmallIcon(if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(NotificationCompat.MediaStyle().setMediaSession(session.sessionToken))
+            .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken))
             .setOngoing(playing)
             .setShowWhen(false)
             .addAction(android.R.drawable.ic_media_previous, "上一集", mediaActionIntent("SKIP_PREV"))
