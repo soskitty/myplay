@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(android.app.Notification.MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
+            .setStyle(androidx.core.app.NotificationCompat.MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
                 .setCancelButtonIntent(mediaActionIntent("STOP")))
             .setOngoing(playing)
             .setShowWhen(false)
