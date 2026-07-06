@@ -42,8 +42,8 @@ class MainActivity : AppCompatActivity() {
     private val trackCache = mutableMapOf<String, List<Track>>()
     private var timerStopMs: Long? = null
     private var episodeBudget: Int? = null
-    private lateinit var tvTimer5min: TextView
-    private lateinit var tvTimerEp: TextView
+    private lateinit var btnTimer5min: Button
+    private lateinit var btnTimerEp: Button
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -83,13 +83,13 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.tv_track).setOnClickListener { showTrackList() }
         btnPlay.setOnClickListener { togglePlay() }
 
-        tvTimer5min = findViewById(R.id.tv_timer_5min)
-        tvTimerEp = findViewById(R.id.tv_timer_ep)
-        findViewById<View>(R.id.btn_timer_5min).setOnClickListener {
+        btnTimer5min = findViewById(R.id.btn_timer_5min)
+        btnTimerEp = findViewById(R.id.btn_timer_ep)
+        btnTimer5min.setOnClickListener {
             timerStopMs = (timerStopMs ?: System.currentTimeMillis()) + 5 * 60 * 1000
             updateTimerDisplay()
         }
-        findViewById<View>(R.id.btn_timer_ep).setOnClickListener {
+        btnTimerEp.setOnClickListener {
             episodeBudget = (episodeBudget ?: 0) + 1
             updateTimerDisplay()
         }
@@ -349,11 +349,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTimerDisplay() {
-        tvTimer5min.text = timerStopMs?.let { ms ->
+        btnTimer5min.text = timerStopMs?.let { ms ->
             val sec = ((ms - System.currentTimeMillis()) / 1000).coerceAtLeast(0).toInt()
-            "剩余 %02d:%02d".format(sec / 60, sec % 60)
-        } ?: ""
-        tvTimerEp.text = episodeBudget?.let { "剩余 ${it}集" } ?: ""
+            "+5分钟 · 剩余 %02d:%02d".format(sec / 60, sec % 60)
+        } ?: "+5分钟"
+        btnTimerEp.text = episodeBudget?.let { "+1集 · 剩余 ${it}集" } ?: "+1集"
     }
 
     private fun stopPlayback() {
