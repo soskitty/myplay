@@ -1,6 +1,7 @@
 package com.example.myplay
 
 import android.app.AlertDialog
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -25,7 +26,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationCompat.MediaStyle
 import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -228,8 +228,7 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(currentAlbum?.name)
             .setContentIntent(openApp)
-            .setStyle(MediaStyle().setMediaSession(session.sessionToken).setShowCancelButton(true)
-                .setCancelButtonIntent(mediaActionIntent("STOP")))
+            .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken))
             .setOngoing(playing)
             .setShowWhen(false)
             .addAction(android.R.drawable.ic_media_previous, "上一集", mediaActionIntent("SKIP_PREV"))
