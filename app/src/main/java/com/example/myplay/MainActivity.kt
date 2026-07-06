@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.MediaMetadata
 import android.media.MediaPlayer
@@ -237,7 +238,8 @@ class MainActivity : AppCompatActivity() {
             .setContentTitle(track.name)
             .setContentText(contentText)
             .setContentIntent(openApp)
-            .setColor(0xFFD97924.toInt())
+            .setColor(Color.parseColor("#D97924"))
+            .apply { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setColorized(true) }
             .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken))
             .setOngoing(playing)
             .setShowWhen(false)
