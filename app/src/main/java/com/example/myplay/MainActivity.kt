@@ -195,6 +195,7 @@ class MainActivity : AppCompatActivity() {
                     player?.pause(); saveProgress(); releasePlayer(); updateNowPlaying()
                 }
             })
+            setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
             setPlaybackState(
                 PlaybackState.Builder().setState(PlaybackState.STATE_NONE, 0, 1f)
                     .setActions(PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT
