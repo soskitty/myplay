@@ -5,11 +5,14 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.MediaMetadata
+import android.view.KeyEvent
 import android.media.MediaPlayer
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
@@ -55,6 +58,18 @@ class MainActivity : AppCompatActivity() {
     private var episodeBudget: Int? = null
     private lateinit var tvTimerInfo: TextView
     private var mediaSession: MediaSession? = null
+    private val mediaButtonReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val key = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT) ?: return
+            if (key.action != KeyEvent.ACTION_DOWN) return
+            when (key.keyCode) {
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> togglePlay()
+                KeyEvent.KEYCODE_MEDIA_NEXT -> playOffset(1)
+                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> playOffset(-1)
+                KeyEvent.KEYCODE_MEDIA_STOP -> { player?.pause(); saveProgress(); releasePlayer(); updateNowPlaying() }
+            }
+        }
+    }
 
     private val pickAlbumLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -128,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         createNotificationChannel()
         initMediaSession()
+        registerReceiver(mediaButtonReceiver, IntentFilter(Intent.ACTION_MEDIA_BUTTON))
 
         loadAlbums()
         albums.firstOrNull()?.let(::selectAlbum)
@@ -141,6 +157,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+        unregisterReceiver(mediaButtonReceiver)
         mediaSession?.release()
         releasePlayer()
     }
