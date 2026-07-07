@@ -195,6 +195,12 @@ class MainActivity : AppCompatActivity() {
                     player?.pause(); saveProgress(); releasePlayer(); updateNowPlaying()
                 }
             })
+            setPlaybackState(
+                PlaybackState.Builder().setState(PlaybackState.STATE_NONE, 0, 1f)
+                    .setActions(PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT
+                        or PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_STOP)
+                    .build()
+            )
             isActive = true
         }
     }
