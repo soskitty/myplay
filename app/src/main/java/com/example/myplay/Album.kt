@@ -7,7 +7,8 @@ data class Album(
     val trackIndex: Int = 0,
     val positionMs: Int = 0,
     val updatedAt: Long = System.currentTimeMillis(),
-    val orderIndex: Int = 0
+    val orderIndex: Int = 0,
+    val sortAscending: Boolean = true
 )
 
 data class Track(

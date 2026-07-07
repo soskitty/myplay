@@ -26,7 +26,8 @@ class AlbumStorage(context: Context) {
                     trackIndex = obj.optInt("trackIndex", 0),
                     positionMs = obj.optInt("positionMs", 0),
                     updatedAt = obj.optLong("updatedAt", 0L),
-                    orderIndex = obj.optInt("orderIndex", 0)
+                    orderIndex = obj.optInt("orderIndex", 0),
+                    sortAscending = obj.optBoolean("sortAscending", true)
                 )
             )
         }
@@ -66,6 +67,10 @@ class AlbumStorage(context: Context) {
     fun delete(id: Long) {
         saveAll(getAll().filterNot { it.id == id })
         File(tracksDir, "tracks_$id.json").delete()
+    }
+
+    fun updateSort(id: Long, ascending: Boolean) {
+        saveAll(getAll().map { if (it.id == id) it.copy(sortAscending = ascending) else it })
     }
 
     fun updateOrder(albums: List<Album>) {
@@ -108,6 +113,7 @@ class AlbumStorage(context: Context) {
                 put("positionMs", album.positionMs)
                 put("updatedAt", album.updatedAt)
                 put("orderIndex", album.orderIndex)
+                put("sortAscending", album.sortAscending)
             })
         }
         file.writeText(arr.toString())

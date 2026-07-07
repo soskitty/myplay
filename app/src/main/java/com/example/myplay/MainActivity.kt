@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         seekBar = findViewById(R.id.seek_bar)
         btnPlay = findViewById(R.id.btn_play)
 
-        adapter = AlbumAdapter(mutableListOf(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum)
+        adapter = AlbumAdapter(mutableListOf(), { currentAlbum?.id }, ::selectAlbum, ::confirmDeleteAlbum, ::toggleSort)
         albumList.layoutManager = LinearLayoutManager(this)
         albumList.adapter = adapter
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
@@ -257,6 +257,13 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun toggleSort(album: Album) {
+        val ascending = !album.sortAscending
+        storage.updateSort(album.id, ascending)
+        loadAlbums()
+        if (currentAlbum?.id == album.id) selectAlbum(albums.first { it.id == album.id })
+    }
+
     private fun openDirectoryPicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -288,7 +295,9 @@ class MainActivity : AppCompatActivity() {
     private fun selectAlbum(album: Album) {
         saveProgress()
         currentAlbum = album
-        tracks = trackCache.getOrPut(album.treeUri) { loadTracks(album) }
+        tracks = trackCache.getOrPut(album.treeUri) { loadTracks(album) }.let {
+            if (album.sortAscending) it else it.reversed()
+        }
         currentTrackIndex = album.trackIndex.coerceIn(0, (tracks.size - 1).coerceAtLeast(0))
         prepareCurrentTrack(album.positionMs, autoStart = false)
         adapter.notifyDataSetChanged()

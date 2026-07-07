@@ -10,7 +10,8 @@ class AlbumAdapter(
     private val albums: MutableList<Album>,
     private val selectedAlbumId: () -> Long?,
     private val onClick: (Album) -> Unit,
-    private val onDelete: (Album) -> Unit
+    private val onDelete: (Album) -> Unit,
+    private val onToggleSort: (Album) -> Unit
 ) : RecyclerView.Adapter<AlbumAdapter.ViewHolder>() {
 
     fun submitList(newAlbums: List<Album>) {
@@ -39,6 +40,8 @@ class AlbumAdapter(
         val isSelected = selectedAlbumId() == album.id
         holder.itemView.alpha = if (isSelected) 1f else 0.82f
         holder.itemView.setBackgroundResource(if (isSelected) R.drawable.panel_bg_selected else R.drawable.panel_bg)
+        holder.btnSort.text = if (album.sortAscending) "↑" else "↓"
+        holder.btnSort.setOnClickListener { onToggleSort(album) }
         holder.itemView.setOnClickListener { onClick(album) }
         holder.itemView.setOnLongClickListener { onDelete(album); true }
     }
@@ -48,5 +51,6 @@ class AlbumAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = view.findViewById(R.id.tv_name)
         val detail: TextView = view.findViewById(R.id.tv_detail)
+        val btnSort: TextView = view.findViewById(R.id.btn_sort)
     }
 }
